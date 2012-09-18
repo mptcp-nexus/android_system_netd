@@ -23,6 +23,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -62,7 +64,12 @@ int SecondaryTableController::findTableNumber(const char *iface) {
 
 int SecondaryTableController::addRoute(SocketClient *cli, char *iface, char *dest, int prefix,
         char *gateway) {
+    char *cmd;
     int tableIndex = findTableNumber(iface);
+    int fd;
+    struct ifreq ifreqs[20];
+    struct ifconf ic;
+    unsigned int i;
     if (tableIndex == -1) {
         tableIndex = findTableNumber(""); // look for an empty slot
         if (tableIndex == -1) {
@@ -74,6 +81,27 @@ int SecondaryTableController::addRoute(SocketClient *cli, char *iface, char *des
         strncpy(mInterfaceTable[tableIndex], iface, IFNAMSIZ);
         // Ensure null termination even if truncation happened
         mInterfaceTable[tableIndex][IFNAMSIZ] = 0;
+    }
+
+    if ((fd = open("/proc/net/mptcp_pm", O_RDONLY)) != -1) {
+	    close(fd);
+	    fd = socket(AF_INET, SOCK_DGRAM, 0);
+	    if (fd < 0) {
+		    LOGE("socket error");
+		    return -1;
+	    }
+            ic.ifc_len = sizeof(ifreqs);
+            ic.ifc_buf = (char *) ifreqs;
+            if (ioctl(fd, SIOCGIFCONF, &ic) < 0) {
+		    LOGE("ioctl error");
+		    return -1;
+	    }
+	    for (i = 0; i < ic.ifc_len / sizeof(struct ifreq); i++) {
+		    if (!strcmp(ifreqs[i].ifr_name, iface)) {
+			    asprintf(&cmd, "%s rule add from %s table %d", IP_PATH, inet_ntoa(((struct sockaddr_in *)&ifreqs[i].ifr_addr)->sin_addr), tableIndex+BASE_TABLE_NUMBER);
+			    system_nosh(cmd);
+		    }
+	    }
     }
 
     return modifyRoute(cli, ADD, iface, dest, prefix, gateway, tableIndex);
@@ -144,12 +172,38 @@ const char *SecondaryTableController::getVersion(const char *addr) {
 
 int SecondaryTableController::removeRoute(SocketClient *cli, char *iface, char *dest, int prefix,
         char *gateway) {
+    char *cmd;
     int tableIndex = findTableNumber(iface);
+    int fd;
+    struct ifreq ifreqs[20];
+    struct ifconf ic;
+    unsigned int i;
     if (tableIndex == -1) {
         ALOGE("Interface not found");
         errno = ENODEV;
         cli->sendMsg(ResponseCode::OperationFailed, "Interface not found", true);
         return -1;
+    }
+
+    if ((fd = open("/proc/net/mptcp_pm", O_RDONLY)) != -1) {
+	    close(fd);
+	    fd = socket(AF_INET, SOCK_DGRAM, 0);
+	    if (fd < 0) {
+		    LOGE("socket error");
+		    return -1;
+	    }
+	    ic.ifc_len = sizeof(ifreqs);
+	    ic.ifc_buf = (char *) ifreqs;
+            if (ioctl(fd, SIOCGIFCONF, &ic) < 0) {
+		    LOGE("ioctl error");
+		    return -1;
+	    }
+	    for (i = 0; i < ic.ifc_len / sizeof(struct ifreq); i++) {
+		    if (!strcmp(ifreqs[i].ifr_name, iface)) {
+			    asprintf(&cmd, "%s rule del from %s table %d", IP_PATH, inet_ntoa(((struct sockaddr_in *)&ifreqs[i].ifr_addr)->sin_addr), tableIndex+BASE_TABLE_NUMBER);
+			    system_nosh(cmd);
+		    }
+	    }
     }
 
     return modifyRoute(cli, DEL, iface, dest, prefix, gateway, tableIndex);
