@@ -87,13 +87,13 @@ int SecondaryTableController::addRoute(SocketClient *cli, char *iface, char *des
 	    close(fd);
 	    fd = socket(AF_INET, SOCK_DGRAM, 0);
 	    if (fd < 0) {
-		    LOGE("socket error");
+		    ALOGE("socket error");
 		    return -1;
 	    }
             ic.ifc_len = sizeof(ifreqs);
             ic.ifc_buf = (char *) ifreqs;
             if (ioctl(fd, SIOCGIFCONF, &ic) < 0) {
-		    LOGE("ioctl error");
+		    ALOGE("ioctl error");
 		    return -1;
 	    }
 	    for (i = 0; i < ic.ifc_len / sizeof(struct ifreq); i++) {
@@ -189,13 +189,13 @@ int SecondaryTableController::removeRoute(SocketClient *cli, char *iface, char *
 	    close(fd);
 	    fd = socket(AF_INET, SOCK_DGRAM, 0);
 	    if (fd < 0) {
-		    LOGE("socket error");
+		    ALOGE("socket error");
 		    return -1;
 	    }
 	    ic.ifc_len = sizeof(ifreqs);
 	    ic.ifc_buf = (char *) ifreqs;
             if (ioctl(fd, SIOCGIFCONF, &ic) < 0) {
-		    LOGE("ioctl error");
+		    ALOGE("ioctl error");
 		    return -1;
 	    }
 	    for (i = 0; i < ic.ifc_len / sizeof(struct ifreq); i++) {
