@@ -83,7 +83,7 @@ int SecondaryTableController::addRoute(SocketClient *cli, char *iface, char *des
         mInterfaceTable[tableIndex][IFNAMSIZ] = 0;
     }
 
-    if ((fd = open("/proc/net/mptcp_pm", O_RDONLY)) != -1) {
+    if ((fd = open("/proc/net/mptcp", O_RDONLY)) != -1) {
 	    close(fd);
 	    fd = socket(AF_INET, SOCK_DGRAM, 0);
 	    if (fd < 0) {
@@ -185,7 +185,7 @@ int SecondaryTableController::removeRoute(SocketClient *cli, char *iface, char *
         return -1;
     }
 
-    if ((fd = open("/proc/net/mptcp_pm", O_RDONLY)) != -1) {
+    if ((fd = open("/proc/net/mptcp", O_RDONLY)) != -1) {
 	    close(fd);
 	    fd = socket(AF_INET, SOCK_DGRAM, 0);
 	    if (fd < 0) {
