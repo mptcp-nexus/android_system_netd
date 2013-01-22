@@ -1,4 +1,4 @@
-android_system_netd
+MPTCP capable network daemon
 ===================
 
-Android network daemon
+This network daemon sets up routes for two interfaces automatically.
