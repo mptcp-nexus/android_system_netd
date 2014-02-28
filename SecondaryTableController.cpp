@@ -94,8 +94,10 @@ int SecondaryTableController::addRoute(SocketClient *cli, char *iface, char *des
             ic.ifc_buf = (char *) ifreqs;
             if (ioctl(fd, SIOCGIFCONF, &ic) < 0) {
 		    ALOGE("ioctl error");
+		    close(fd);
 		    return -1;
 	    }
+	    close(fd);
 	    for (i = 0; i < ic.ifc_len / sizeof(struct ifreq); i++) {
 		    if (!strcmp(ifreqs[i].ifr_name, iface)) {
 			    asprintf(&cmd, "%s rule add from %s table %d", IP_PATH, inet_ntoa(((struct sockaddr_in *)&ifreqs[i].ifr_addr)->sin_addr), tableIndex+BASE_TABLE_NUMBER);
@@ -196,8 +198,10 @@ int SecondaryTableController::removeRoute(SocketClient *cli, char *iface, char *
 	    ic.ifc_buf = (char *) ifreqs;
             if (ioctl(fd, SIOCGIFCONF, &ic) < 0) {
 		    ALOGE("ioctl error");
+		    close(fd);
 		    return -1;
 	    }
+	    close(fd);
 	    for (i = 0; i < ic.ifc_len / sizeof(struct ifreq); i++) {
 		    if (!strcmp(ifreqs[i].ifr_name, iface)) {
 			    asprintf(&cmd, "%s rule del from %s table %d", IP_PATH, inet_ntoa(((struct sockaddr_in *)&ifreqs[i].ifr_addr)->sin_addr), tableIndex+BASE_TABLE_NUMBER);
